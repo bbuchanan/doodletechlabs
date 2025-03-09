@@ -1,0 +1,17 @@
+/* Monaco editor styles */
+.monaco-editor {
+  padding: 10px 0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.monaco-editor-background {
+  background-color: #1e1e1e;
+}
+
+/* Override some default styles for better integration */
+.monaco-editor .margin {
+  background-color: #1e1e1e;
+}
+
+/* Custom syntax highlighting can be added here if needed */ 
