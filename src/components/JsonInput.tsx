@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import Editor, { Monaco, OnMount } from "@monaco-editor/react";
+import Editor, { OnMount } from "@monaco-editor/react";
 import styled from "@emotion/styled";
 import { validateJSON, JsonValidationResult } from "../utils/jsonUtils";
 import * as monaco from "monaco-editor";

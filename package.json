@@ -10,8 +10,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.126",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "clipboard-copy": "^4.0.1",
@@ -20,12 +18,12 @@
     "react-json-tree": "^0.20.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^4.2.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -47,6 +45,10 @@
     ]
   },
   "devDependencies": {
-    "monaco-editor": "^0.52.2"
+    "@craco/craco": "^7.1.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.10",
+    "monaco-editor": "^0.52.2",
+    "webpack-filter-warnings-plugin": "^1.2.1"
   }
 }
