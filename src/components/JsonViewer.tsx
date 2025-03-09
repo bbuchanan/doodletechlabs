@@ -95,7 +95,6 @@ const theme = {
 };
 
 const JsonViewer: React.FC<JsonViewerProps> = ({ jsonData }) => {
-  const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
   const [expandAll, setExpandAll] = useState<boolean>(false);
 
   const handleCopyToClipboard = () => {

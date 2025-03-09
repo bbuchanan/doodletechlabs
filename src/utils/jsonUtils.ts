@@ -3,15 +3,65 @@
  */
 
 /**
- * Validates if a string is valid JSON
+ * Interface for JSON validation result
  */
-export const isValidJSON = (jsonString: string): boolean => {
+export interface JsonValidationResult {
+  isValid: boolean;
+  error?: {
+    message: string;
+    line?: number;
+    column?: number;
+  };
+}
+
+/**
+ * Validates if a string is valid JSON and provides detailed error information
+ */
+export const validateJSON = (jsonString: string): JsonValidationResult => {
   try {
     JSON.parse(jsonString);
-    return true;
+    return { isValid: true };
   } catch (e) {
-    return false;
+    // Parse the error message to extract line and column information
+    const error = e as Error;
+    const message = error.message;
+
+    // Example error message: "Unexpected token } in JSON at position 42"
+    // or "Unexpected end of JSON input"
+    const positionMatch = message.match(/at position (\d+)/);
+
+    if (positionMatch) {
+      const position = parseInt(positionMatch[1], 10);
+
+      // Calculate line and column from position
+      const lines = jsonString.substring(0, position).split("\n");
+      const line = lines.length;
+      const column = lines[lines.length - 1].length + 1;
+
+      return {
+        isValid: false,
+        error: {
+          message: message.replace(/in JSON at position \d+/, ""),
+          line,
+          column,
+        },
+      };
+    }
+
+    return {
+      isValid: false,
+      error: {
+        message: message,
+      },
+    };
   }
+};
+
+/**
+ * Legacy validation function (kept for backward compatibility)
+ */
+export const isValidJSON = (jsonString: string): boolean => {
+  return validateJSON(jsonString).isValid;
 };
 
 /**
@@ -43,6 +93,7 @@ export const extractNodesByPath = (jsonData: any, path: string): any => {
       // Handle array indices like user.addresses[0]
       const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
       if (arrayMatch) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_, propName, index] = arrayMatch;
         result = result[propName][parseInt(index)];
       } else {
