@@ -174,6 +174,18 @@ const HomePage: React.FC = () => {
         </ToolCard>
 
         <ToolCard>
+          <ToolIcon>🔐</ToolIcon>
+          <ToolTitle>Password Generator</ToolTitle>
+          <ToolDescription>
+            Create strong, secure passwords with customizable options. Generate passwords of any length with various
+            character sets for better security.
+          </ToolDescription>
+          <Link href="/tools/password-generator" className="button">
+            Create Passwords
+          </Link>
+        </ToolCard>
+
+        <ToolCard>
           <ToolIcon>✨</ToolIcon>
           <ToolTitle>Coming Soon...</ToolTitle>
           <ToolDescription>

@@ -131,6 +131,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               </li>
               <li>
+                <Link href="/tools/password-generator" className={isActive("/tools/password-generator")}>
+                  Password Generator
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className={isActive("/about")}>
                   About
                 </Link>
