@@ -1,7 +1,8 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import styled from "@emotion/styled";
+import { useLoading } from "./LoadingContext";
 
 const Container = styled.div`
   max-width: 1200px;
@@ -49,30 +50,30 @@ const Nav = styled.nav`
   li {
     margin-left: 30px;
   }
+`;
 
-  a {
-    text-decoration: none;
-    color: #666;
-    font-weight: 500;
-    transition: color 0.2s ease;
-    position: relative;
+const NavLink = styled(Link)`
+  text-decoration: none;
+  color: #666;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
 
-    &:hover {
-      color: #ff9c00;
-    }
+  &:hover {
+    color: #ff9c00;
+  }
 
-    &.active {
-      color: #ff9c00;
+  &.active {
+    color: #ff9c00;
 
-      &:after {
-        content: "";
-        position: absolute;
-        bottom: -5px;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background-color: #ff9c00;
-      }
+    &:after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #ff9c00;
     }
   }
 `;
@@ -96,16 +97,22 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const router = useRouter();
+  const { startLoading } = useLoading();
 
   const isActive = (path: string): string => {
     return router.pathname === path ? "active" : "";
   };
 
+  const handleNavigation = useCallback(() => {
+    // Start loading when user clicks on a navigation link
+    startLoading();
+  }, [startLoading]);
+
   return (
     <>
       <Container>
         <Header>
-          <Link href="/" passHref>
+          <Link href="/" passHref onClick={handleNavigation}>
             <Logo>
               <img src="/images/doodle-logo.svg" alt="DoodleTechLabs Logo" />
               <h1>
@@ -116,29 +123,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Nav>
             <ul>
               <li>
-                <Link href="/" className={isActive("/")}>
+                <NavLink href="/" className={isActive("/")} onClick={handleNavigation}>
                   Home
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link href="/tools/json-editor" className={isActive("/tools/json-editor")}>
+                <NavLink
+                  href="/tools/json-editor"
+                  className={isActive("/tools/json-editor")}
+                  onClick={handleNavigation}>
                   JSON Editor
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link href="/tools/guid-generator" className={isActive("/tools/guid-generator")}>
+                <NavLink
+                  href="/tools/guid-generator"
+                  className={isActive("/tools/guid-generator")}
+                  onClick={handleNavigation}>
                   GUID Generator
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link href="/tools/password-generator" className={isActive("/tools/password-generator")}>
+                <NavLink
+                  href="/tools/password-generator"
+                  className={isActive("/tools/password-generator")}
+                  onClick={handleNavigation}>
                   Password Generator
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link href="/about" className={isActive("/about")}>
+                <NavLink href="/about" className={isActive("/about")} onClick={handleNavigation}>
                   About
-                </Link>
+                </NavLink>
               </li>
             </ul>
           </Nav>

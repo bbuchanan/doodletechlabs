@@ -1,7 +1,6 @@
 import React from "react";
 import Head from "next/head";
 import styled from "@emotion/styled";
-import Link from "next/link";
 
 const AboutContainer = styled.div`
   max-width: 800px;

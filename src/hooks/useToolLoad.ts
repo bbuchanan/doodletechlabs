@@ -1,70 +1,120 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLoading } from "../components/layout/LoadingContext";
 
 interface UseToolLoadProps {
   initialLoadDelay?: number; // Delay before showing loading state (prevents flicker for fast loads)
   loadingTimeout?: number; // Maximum loading time before assuming something went wrong
+  debug?: boolean; // Enable debug logs
 }
 
 /**
  * Custom hook for handling tool loading states
  * This helps with showing/hiding loading indicators and handling performance
  */
-const useToolLoad = ({ initialLoadDelay = 200, loadingTimeout = 10000 }: UseToolLoadProps = {}) => {
+const useToolLoad = ({ initialLoadDelay = 150, loadingTimeout = 15000, debug = false }: UseToolLoadProps = {}) => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { startLoading, stopLoading } = useLoading();
-  const [loadingTimerId, setLoadingTimerId] = useState<NodeJS.Timeout | null>(null);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const loadingTimerId = useRef<NodeJS.Timeout | null>(null);
+  const timeoutId = useRef<NodeJS.Timeout | null>(null);
+  const isLoadingActive = useRef<boolean>(false);
+
+  // Function references to avoid circular dependencies
+  const completeLoadRef = useRef<() => void>(() => {});
+  const startLoadRef = useRef<() => void>(() => {});
+
+  // Debug logger
+  const log = useCallback(
+    (message: string) => {
+      if (debug) {
+        console.log(`[LoadingState] ${message}`);
+      }
+    },
+    [debug]
+  );
+
+  // Complete loading sequence
+  const completeLoad = useCallback(() => {
+    log("Completing load sequence");
+
+    if (loadingTimerId.current) {
+      clearTimeout(loadingTimerId.current);
+      loadingTimerId.current = null;
+    }
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current);
+      timeoutId.current = null;
+    }
+
+    isLoadingActive.current = false;
+    setIsReady(true);
+    stopLoading();
+  }, [stopLoading, log]);
+
+  // Update ref when the callback changes
+  useEffect(() => {
+    completeLoadRef.current = completeLoad;
+  }, [completeLoad]);
 
   // Start loading sequence
-  const startLoad = () => {
+  const startLoad = useCallback(() => {
+    log("Starting load sequence");
+
     // Clear any existing timers
-    if (loadingTimerId) clearTimeout(loadingTimerId);
-    if (timeoutId) clearTimeout(timeoutId);
+    if (loadingTimerId.current) {
+      clearTimeout(loadingTimerId.current);
+      loadingTimerId.current = null;
+    }
+    if (timeoutId.current) {
+      clearTimeout(timeoutId.current);
+      timeoutId.current = null;
+    }
 
     setIsReady(false);
     setError(null);
+    isLoadingActive.current = true;
 
     // Set delayed loading state to prevent flicker for fast loads
-    const newLoadingTimer = setTimeout(() => {
-      startLoading();
+    loadingTimerId.current = setTimeout(() => {
+      if (isLoadingActive.current) {
+        log("Showing loading indicator");
+        startLoading();
+      }
     }, initialLoadDelay);
 
     // Set timeout for maximum loading time
-    const newTimeoutId = setTimeout(() => {
-      setError("Loading took too long. Please try again.");
-      stopLoading();
+    timeoutId.current = setTimeout(() => {
+      if (isLoadingActive.current) {
+        log("Loading timeout triggered");
+        setError("Loading took too long. Please try again.");
+        completeLoadRef.current();
+      }
     }, loadingTimeout);
+  }, [initialLoadDelay, loadingTimeout, startLoading, log]);
 
-    setLoadingTimerId(newLoadingTimer);
-    setTimeoutId(newTimeoutId);
-  };
-
-  // Complete loading sequence
-  const completeLoad = () => {
-    if (loadingTimerId) clearTimeout(loadingTimerId);
-    if (timeoutId) clearTimeout(timeoutId);
-    setLoadingTimerId(null);
-    setTimeoutId(null);
-    setIsReady(true);
-    stopLoading();
-  };
+  // Update ref when the callback changes
+  useEffect(() => {
+    startLoadRef.current = startLoad;
+  }, [startLoad]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (loadingTimerId) clearTimeout(loadingTimerId);
-      if (timeoutId) clearTimeout(timeoutId);
-      stopLoading();
+      log("Cleaning up on unmount");
+      if (loadingTimerId.current) clearTimeout(loadingTimerId.current);
+      if (timeoutId.current) clearTimeout(timeoutId.current);
+      if (isLoadingActive.current) {
+        stopLoading();
+      }
     };
-  }, [loadingTimerId, timeoutId, stopLoading]);
+  }, [stopLoading, log]);
 
   return {
     isReady,
     error,
     startLoad,
     completeLoad,
+    isLoading: isLoadingActive.current,
   };
 };
 

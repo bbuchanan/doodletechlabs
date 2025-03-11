@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Head from "next/head";
 import styled from "@emotion/styled";
-import { useLoading } from "../../components/layout/LoadingContext";
 import useToolLoad from "../../hooks/useToolLoad";
 import clipboardCopy from "clipboard-copy";
 
@@ -252,7 +251,7 @@ const PasswordGeneratorPage: React.FC = () => {
   const [passwords, setPasswords] = useState<string[]>([]);
   const [strength, setStrength] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
-  const { startLoad, completeLoad, isReady } = useToolLoad();
+  const { startLoad, completeLoad } = useToolLoad();
 
   const [options, setOptions] = useState<PasswordOptions>({
     length: 16,
@@ -265,18 +264,19 @@ const PasswordGeneratorPage: React.FC = () => {
     count: 5,
   });
 
-  // Character sets
-  const charSets = {
-    lowercase: "abcdefghijklmnopqrstuvwxyz",
-    uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    numbers: "0123456789",
-    symbols: "!@#$%^&*()_+~`|}{[]:;?><,./-=",
-    similar: "il1Lo0O",
-    ambiguous: "{}[]()/\\'\"`~,;:.<>",
-  };
-
+  const charSets = useMemo(
+    () => ({
+      lowercase: "abcdefghijklmnopqrstuvwxyz",
+      uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      numbers: "0123456789",
+      symbols: "!@#$%^&*()_+~`|}{[]:;?><,./-=",
+      similar: "il1Lo0O",
+      ambiguous: "{}[]()/\\'\"`~,;:.<>",
+    }),
+    [] // No dependencies, so it will only run once.
+  );
   // Filter character sets based on options
-  const getAvailableChars = () => {
+  const getAvailableChars = useCallback(() => {
     let chars = "";
 
     if (options.includeLowercase) chars += charSets.lowercase;
@@ -297,10 +297,20 @@ const PasswordGeneratorPage: React.FC = () => {
     }
 
     return chars;
-  };
+  }, [options, charSets]);
+
+  // Shuffle a string
+  const shuffleString = useCallback((str: string): string => {
+    const array = str.split("");
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array.join("");
+  }, []);
 
   // Generate a single random password
-  const generatePassword = (): string => {
+  const generatePassword = useCallback((): string => {
     const chars = getAvailableChars();
     if (!chars.length) return "Please select at least one character set";
 
@@ -329,20 +339,10 @@ const PasswordGeneratorPage: React.FC = () => {
 
     // Shuffle the password
     return shuffleString(password);
-  };
-
-  // Shuffle a string
-  const shuffleString = (str: string): string => {
-    const array = str.split("");
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array.join("");
-  };
+  }, [options, getAvailableChars, charSets, shuffleString]);
 
   // Calculate password strength (0-100)
-  const calculateStrength = (password: string): number => {
+  const calculateStrength = useCallback((password: string): number => {
     if (!password) return 0;
 
     let score = 0;
@@ -367,10 +367,10 @@ const PasswordGeneratorPage: React.FC = () => {
     }
 
     return score;
-  };
+  }, []);
 
   // Generate multiple passwords
-  const generatePasswords = () => {
+  const generatePasswords = useCallback(() => {
     startLoad();
 
     try {
@@ -385,13 +385,13 @@ const PasswordGeneratorPage: React.FC = () => {
         newPasswords.push(generatePassword());
       }
       setPasswords(newPasswords);
-
-      completeLoad();
     } catch (error) {
       console.error("Error generating passwords:", error);
+    } finally {
+      // Always stop loading, even if an error occurred
       completeLoad();
     }
-  };
+  }, [startLoad, completeLoad, options.count, generatePassword, calculateStrength]);
 
   // Handle option changes
   const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -419,11 +419,6 @@ const PasswordGeneratorPage: React.FC = () => {
     copyToClipboard(allPasswords);
   };
 
-  // Generate a password on initial load
-  useEffect(() => {
-    generatePasswords();
-  }, []);
-
   // Get strength description
   const getStrengthText = (strength: number): string => {
     if (strength < 25) return "Weak";
@@ -431,6 +426,24 @@ const PasswordGeneratorPage: React.FC = () => {
     if (strength < 75) return "Good";
     return "Strong";
   };
+
+  // Generate a password on initial load
+  useEffect(() => {
+    // Use a short timeout to allow the page to render first
+    const timer = setTimeout(() => {
+      try {
+        generatePasswords();
+      } catch (error) {
+        console.error("Error during initial password generation:", error);
+        completeLoad(); // Ensure loading stops even on error
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      completeLoad(); // Ensure loading stops when component unmounts
+    };
+  }, [generatePasswords, completeLoad]);
 
   return (
     <>
@@ -556,7 +569,7 @@ const PasswordGeneratorPage: React.FC = () => {
                   checked={options.excludeAmbiguous}
                   onChange={handleOptionChange}
                 />
-                Exclude Ambiguous {`{ } [ ] ( ) / \ ' " ~ , ; : . < >`}
+                Exclude Ambiguous {`{ } [ ] ( ) / \\ ' " ~ , ; : . < >`}
               </CheckboxContainer>
             </OptionGroup>
           </OptionsGrid>
@@ -581,11 +594,9 @@ const PasswordGeneratorPage: React.FC = () => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
-                <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
-                <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                <line x1="16" y1="8" x2="2" y2="22"></line>
+                <line x1="17.5" y1="15" x2="9" y2="15"></line>
                 <line x1="12" y1="22.08" x2="12" y2="12"></line>
               </svg>
               Generate Passwords

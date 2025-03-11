@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import styled from "@emotion/styled";
-import { v1 as uuidv1, v4 as uuidv4, v5 as uuidv5, validate } from "uuid";
+import { v1 as uuidv1, v3 as uuidv3, v4 as uuidv4, v5 as uuidv5 } from "uuid";
+import useToolLoad from "../../hooks/useToolLoad";
 import clipboardCopy from "clipboard-copy";
 
 const Container = styled.div`
@@ -191,10 +192,87 @@ const GuidGeneratorPage: React.FC = () => {
   });
   const [namespaceError, setNamespaceError] = useState<string>("");
 
+  const { startLoad, completeLoad } = useToolLoad();
+
+  // Format a GUID according to the selected format
+  const formatGuid = useCallback(
+    (guid: string): string => {
+      switch (options.format) {
+        case "braces":
+          return `{${guid}}`;
+        case "parentheses":
+          return `(${guid})`;
+        case "no-hyphens":
+          return guid.replace(/-/g, "");
+        default:
+          return guid;
+      }
+    },
+    [options.format]
+  );
+
+  // Generate GUIDs based on options
+  const generateGuids = useCallback(() => {
+    startLoad();
+
+    try {
+      // Validate count
+      if (options.count < 1 || options.count > 100) {
+        setCountError("Count must be between 1 and 100");
+        completeLoad();
+        return;
+      }
+
+      // Generate GUIDs
+      const generatedGuids: string[] = [];
+
+      for (let i = 0; i < options.count; i++) {
+        let guid: string;
+
+        switch (options.version) {
+          case "v1":
+            guid = uuidv1();
+            break;
+          case "v3":
+            try {
+              guid = uuidv3(options.name, options.namespace);
+            } catch (error) {
+              setNamespaceError("Invalid namespace UUID format");
+              throw error;
+            }
+            break;
+          case "v5":
+            try {
+              guid = uuidv5(options.name, options.namespace);
+            } catch (error) {
+              setNamespaceError("Invalid namespace UUID format");
+              throw error;
+            }
+            break;
+          default:
+            guid = uuidv4();
+        }
+
+        // Format and apply case
+        const formattedGuid = formatGuid(guid);
+        const finalGuid = options.uppercase ? formattedGuid.toUpperCase() : formattedGuid;
+
+        generatedGuids.push(finalGuid);
+      }
+
+      setGuids(generatedGuids);
+      setCopied(false);
+    } catch (error) {
+      console.error("Error generating GUIDs:", error);
+    } finally {
+      completeLoad();
+    }
+  }, [options, formatGuid, startLoad, completeLoad, setNamespaceError]);
+
   // Generate GUIDs on component mount
   useEffect(() => {
     generateGuids();
-  }, []);
+  }, [generateGuids]);
 
   const handleOptionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -226,70 +304,6 @@ const GuidGeneratorPage: React.FC = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : name === "count" ? parseInt(value, 10) : value,
     }));
-  };
-
-  const formatGuid = (guid: string): string => {
-    let formatted = guid;
-
-    // Remove dashes if needed
-    if (options.format === "nodashes") {
-      formatted = formatted.replace(/-/g, "");
-    } else if (options.format === "braces") {
-      formatted = `{${formatted}}`;
-    } else if (options.format === "parentheses") {
-      formatted = `(${formatted})`;
-    }
-
-    // Convert to uppercase if needed
-    if (options.uppercase) {
-      formatted = formatted.toUpperCase();
-    }
-
-    return formatted;
-  };
-
-  const generateGuids = () => {
-    try {
-      // Don't proceed if there are errors
-      if (countError || namespaceError) {
-        return;
-      }
-
-      // Validate namespace if using v5
-      if (options.version === "v5" && !validate(options.namespace)) {
-        setNamespaceError("Please enter a valid UUID for the namespace");
-        return;
-      }
-
-      const newGuids: string[] = [];
-
-      for (let i = 0; i < options.count; i++) {
-        let guid: string;
-
-        switch (options.version) {
-          case "v1":
-            guid = uuidv1();
-            break;
-          case "v5":
-            guid = uuidv5(options.name, options.namespace);
-            break;
-          case "v4":
-          default:
-            guid = uuidv4();
-            break;
-        }
-
-        newGuids.push(formatGuid(guid));
-      }
-
-      setGuids(newGuids);
-      setNamespaceError("");
-    } catch (error) {
-      console.error("Error generating GUIDs:", error);
-      if (error instanceof Error) {
-        setNamespaceError(error.message);
-      }
-    }
   };
 
   const copyToClipboard = (text: string) => {
