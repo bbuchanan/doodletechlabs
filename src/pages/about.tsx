@@ -181,7 +181,7 @@ const AboutPage: React.FC = () => {
 
         <Section>
           <SectionTitle>Our Tools</SectionTitle>
-          <p>We're constantly working to expand our suite of developer tools. Currently, we offer:</p>
+          <p>We&apos;re constantly working to expand our suite of developer tools. Currently, we offer:</p>
           <ul>
             <li>
               <strong>JSON Editor</strong> - A feature-rich editor for working with JSON data
@@ -190,7 +190,7 @@ const AboutPage: React.FC = () => {
               <strong>GUID Generator</strong> - Quickly generate UUIDs for your projects
             </li>
           </ul>
-          <p>Have a suggestion for a tool you'd like to see? Let us know through the contact form below!</p>
+          <p>Have a suggestion for a tool you&apos;d like to see? Let us know through the contact form below!</p>
         </Section>
 
         <Section>

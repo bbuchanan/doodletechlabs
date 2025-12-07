@@ -178,10 +178,12 @@ const JsonSearch: React.FC<JsonSearchProps> = ({ jsonData }) => {
   const [showExtracted, setShowExtracted] = useState<boolean>(false);
 
   useEffect(() => {
-    // Clear results when JSON data changes
+    /* eslint-disable react-hooks/set-state-in-effect */
+    // Clear results when JSON data changes; this reset is intentional
     setSearchResults([]);
     setExtractedNode(null);
     setShowExtracted(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [jsonData]);
 
   const handleSearch = () => {

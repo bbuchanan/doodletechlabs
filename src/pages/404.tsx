@@ -47,7 +47,7 @@ const Custom404: React.FC = () => {
       <ErrorCode>404</ErrorCode>
       <Title>Page Not Found</Title>
       <Text>
-        Oops! It looks like this page has gone for a walk with the golden doodles. Let's help you find your way back!
+        Oops! It looks like this page has gone for a walk with the golden doodles. Let&apos;s help you find your way back!
       </Text>
       <ButtonGroup>
         <Link href="/" className="button">

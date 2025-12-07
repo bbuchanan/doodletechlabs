@@ -93,8 +93,7 @@ export const extractNodesByPath = (jsonData: any, path: string): any => {
       // Handle array indices like user.addresses[0]
       const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
       if (arrayMatch) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [_, propName, index] = arrayMatch;
+        const [, propName, index] = arrayMatch;
         result = result[propName][parseInt(index)];
       } else {
         result = result[part];

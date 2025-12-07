@@ -189,7 +189,7 @@ const HomePage: React.FC = () => {
           <ToolIcon>✨</ToolIcon>
           <ToolTitle>Coming Soon...</ToolTitle>
           <ToolDescription>
-            We're constantly working on new tools to help make your developer life easier. Stay tuned for more useful
+            We&apos;re constantly working on new tools to help make your developer life easier. Stay tuned for more useful
             utilities, coming soon!
           </ToolDescription>
           <Link href="/about" className="button secondary">

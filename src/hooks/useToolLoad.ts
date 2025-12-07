@@ -14,6 +14,7 @@ interface UseToolLoadProps {
 const useToolLoad = ({ initialLoadDelay = 150, loadingTimeout = 15000, debug = false }: UseToolLoadProps = {}) => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { startLoading, stopLoading } = useLoading();
   const loadingTimerId = useRef<NodeJS.Timeout | null>(null);
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +48,7 @@ const useToolLoad = ({ initialLoadDelay = 150, loadingTimeout = 15000, debug = f
     }
 
     isLoadingActive.current = false;
+    setIsLoading(false);
     setIsReady(true);
     stopLoading();
   }, [stopLoading, log]);
@@ -73,6 +75,7 @@ const useToolLoad = ({ initialLoadDelay = 150, loadingTimeout = 15000, debug = f
     setIsReady(false);
     setError(null);
     isLoadingActive.current = true;
+    setIsLoading(true);
 
     // Set delayed loading state to prevent flicker for fast loads
     loadingTimerId.current = setTimeout(() => {
@@ -114,7 +117,7 @@ const useToolLoad = ({ initialLoadDelay = 150, loadingTimeout = 15000, debug = f
     error,
     startLoad,
     completeLoad,
-    isLoading: isLoadingActive.current,
+    isLoading,
   };
 };
 
